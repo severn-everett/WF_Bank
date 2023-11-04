@@ -8,12 +8,15 @@
     "start": "node dist/app/main.js",
     "build": "tsc --build",
     "buildAndStart": "tsc --build && node dist/app/main.js",
+    "buildAndTest": "tsc --build && jest",
     "clean": "tsc --build --clean"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.18.2"
+    "express": "^4.18.2",
+    "express-async-errors": "^3.1.1",
+    "express-validator": "^7.0.1"
   },
   "devDependencies": {
     "@types/express": "^4.17.20",
