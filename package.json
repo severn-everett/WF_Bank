@@ -7,6 +7,7 @@
     "test": "jest",
     "start": "node dist/app/main.js",
     "build": "tsc --build",
+    "buildAndStart": "tsc --build && node dist/app/main.js",
     "clean": "tsc --build --clean"
   },
   "author": "",
