@@ -1,0 +1,12 @@
+{
+  "defaultEnv": "pg",
+  "pg": {
+    "driver": "pg",
+    "user": "postgres",
+    "password": "postgres",
+    "host": "localhost",
+    "database": "wfdb",
+    "port": "5432",
+    "schema": "dev"
+  }
+}
