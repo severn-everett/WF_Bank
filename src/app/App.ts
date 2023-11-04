@@ -8,13 +8,13 @@ export class App {
     public readonly express: Express = express()
     private readonly port: Number
     private server: Server | undefined
-    private readonly database: Database
+    private readonly db: Database
     private readonly transactionRouter: TransactionRouter
 
     constructor(port: number) {
         this.port = port
-        this.database = new Database()
-        let depositUseCase = new DepositUseCase()
+        this.db = new Database()
+        let depositUseCase = new DepositUseCase(this.db)
         this.transactionRouter = new TransactionRouter(depositUseCase)
     }
 
@@ -25,6 +25,6 @@ export class App {
 
     async stop(): Promise<void> {
         this.server?.close()
-        await this.database.shutdown()
+        await this.db.shutdown()
     }
 }

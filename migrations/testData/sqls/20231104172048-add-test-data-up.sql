@@ -1,6 +1,6 @@
 INSERT INTO account(id, amount)
 VALUES ('DevAccountEmpty', 0.0),
-       ('DevAccountPositive', 0.0),
+       ('DevAccountPositive', 25.0),
        ('DevAccountOverdraft', 0.0);
 
 INSERT INTO transaction(account_id, type, serial_number, amount)
