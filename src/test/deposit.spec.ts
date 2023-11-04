@@ -34,7 +34,6 @@ describe('Deposit Test', () => {
     })
 })
 
-afterAll(done => {
-    app.stop()
-    done()
+afterAll(async () => {
+    await app.stop()
 })
