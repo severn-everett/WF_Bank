@@ -1,20 +1,22 @@
-import express, {Express, Request, Response} from "express"
-import {Server, IncomingMessage, ServerResponse} from "http"
+import express, {Express} from "express"
+import {Server} from "http"
 import {TransactionRouter} from "./routers/TransactionRouter"
 import {DepositUseCase} from "./usecases/DepositUseCase"
-import {Database} from "./services/Database";
+import {DatabaseService} from "./services/DatabaseService";
+import {AccountService} from "./services/AccountService";
 
 export class App {
     public readonly express: Express = express()
     private readonly port: Number
     private server: Server | undefined
-    private readonly db: Database
+    private readonly db: DatabaseService
     private readonly transactionRouter: TransactionRouter
 
     constructor(port: number) {
         this.port = port
-        this.db = new Database()
-        let depositUseCase = new DepositUseCase(this.db)
+        this.db = new DatabaseService()
+        const accountService = new AccountService(this.db)
+        const depositUseCase = new DepositUseCase(accountService)
         this.transactionRouter = new TransactionRouter(depositUseCase)
     }
 
