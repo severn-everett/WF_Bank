@@ -2,7 +2,7 @@ import {AccountTransaction} from "./AccountTransaction";
 import {TransactionType} from "./TransactionType";
 
 export class WithdrawTransaction implements AccountTransaction {
-    public readonly type = TransactionType.WITHDRAW
+    public readonly type = TransactionType.WITHDRAWAL
     public readonly accountId: string
     public readonly serialNumber: number
     public readonly amount: number

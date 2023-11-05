@@ -1,10 +1,11 @@
 import {DatabaseService} from "./DatabaseService";
 import {Account} from "../model/Account";
 import {createDateStr} from "../util/DateUtil";
-import {DAILY_DEPOSIT_LIMIT} from "../util/Constants";
+import {DAILY_DEPOSIT_LIMIT, OVERDRAFT_LIMIT} from "../util/Constants";
 import {TransactionDisallowedException} from "../model/TransactionDisallowedException";
 import {DepositTransaction} from "../model/DepositTransaction";
 import {TransactionCollisionException} from "../model/TransactionCollisionException";
+import {WithdrawTransaction} from "../model/WithdrawTransaction";
 
 export class AccountService {
     private readonly dbService: DatabaseService
@@ -25,7 +26,30 @@ export class AccountService {
                     depositSuccessful = true
                 } else {
                     return Promise.reject(
-                        new TransactionDisallowedException(`Transaction would exceed limit of ${DAILY_DEPOSIT_LIMIT}`)
+                        new TransactionDisallowedException(`Transaction would exceed daily deposit limit of ${DAILY_DEPOSIT_LIMIT}`)
+                    )
+                }
+            } catch (e) {
+                // Only abort if a transaction collision hasn't occurred
+                if (!(e instanceof TransactionCollisionException)) return Promise.reject(e)
+            }
+        }
+        return Promise.resolve()
+    }
+
+    async withdraw(accountId: string, amount: number): Promise<void> {
+        let withdrawSuccessful = false
+        while (!withdrawSuccessful) {
+            try {
+                const account = await this.getAccount(accountId)
+                if (this.canWithdraw(account, amount)) {
+                    await this.dbService.saveTransaction(
+                        new WithdrawTransaction(accountId, account.serialNumber + 1, amount, new Date())
+                    )
+                    withdrawSuccessful = true
+                } else {
+                    return Promise.reject(
+                        new TransactionDisallowedException(`Transaction would exceed overdraft limit of ${OVERDRAFT_LIMIT}`)
                     )
                 }
             } catch (e) {
@@ -54,5 +78,9 @@ export class AccountService {
         const todayDateStr = createDateStr(new Date())
         const todayDepositAmt = account.depositCount.get(todayDateStr) ?? 0.0
         return (todayDepositAmt + amount) <= DAILY_DEPOSIT_LIMIT
+    }
+
+    private canWithdraw(account: Account, amount: number): boolean {
+        return (account.amount - amount) >= OVERDRAFT_LIMIT
     }
 }

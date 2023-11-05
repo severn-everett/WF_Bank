@@ -5,7 +5,7 @@ import {createDateStr} from "../util/DateUtil";
 
 export class Account {
     private _amount: number
-    private _serialNumber: number = -1
+    private _serialNumber: number = 0
     public readonly depositCount: Map<string, number> = new Map<string, number>()
 
     constructor(amount: number) {

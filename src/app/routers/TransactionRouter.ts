@@ -7,18 +7,24 @@ import {InternalException} from "../model/InternalException";
 import {InvalidParameterException} from "../model/InvalidParameterException";
 import {AccountMissingException} from "../model/AccountMissingException";
 import {TransactionDisallowedException} from "../model/TransactionDisallowedException";
+import {WithdrawUseCase} from "../usecases/WithdrawUseCase";
 
 type DepositRequest = Request<never, never, never, { accountId: string, amount: any }>
 type WithdrawRequest = Request<never, never, never, { accountId: string, amount: any }>
 type TransferRequest = Request<never, never, never, { fromAccountId: string, toAccountId: string, amount: any }>
-const internalServerErrorMsg = "An unexpected internal error occurred"
+
+const INTERNAL_SERVER_ERROR_MSG = "An unexpected internal error occurred"
+
+const DEPOSIT_ENDPOINT = "/deposit"
+const WITHDRAW_ENDPOINT = "/withdraw"
+const TRANSFER_ENDPOINT = "/transfer"
 
 export class TransactionRouter {
     public readonly router: Router = express.Router()
 
-    constructor(depositUseCase: DepositUseCase) {
+    constructor(depositUseCase: DepositUseCase, withdrawUseCase: WithdrawUseCase) {
         this.router.post(
-            "/deposit",
+            DEPOSIT_ENDPOINT,
             async (request: DepositRequest, response: Response) => {
                 return depositUseCase.handle(
                     request.query.accountId,
@@ -27,13 +33,21 @@ export class TransactionRouter {
                     response.status(httpConstants.HTTP_STATUS_OK)
                     response.send()
                 }).catch((error) => {
-                    this.handleError("/deposit", error, response)
+                    this.handleError(DEPOSIT_ENDPOINT, error, response)
                 })
             }
         ).post(
-            "/withdraw",
-            async (request: Request, response: Response) => {
-                response.send(`Withdraw ${request.query.amount} from account ${request.query.accountId}`)
+            WITHDRAW_ENDPOINT,
+            async (request: WithdrawRequest, response: Response) => {
+                return withdrawUseCase.handle(
+                    request.query.accountId,
+                    request.query.amount
+                ).then(() => {
+                    response.status(httpConstants.HTTP_STATUS_OK)
+                    response.send()
+                }).catch((error) => {
+                    this.handleError(WITHDRAW_ENDPOINT, error, response)
+                })
             }
         ).post(
             "/transfer",
@@ -60,11 +74,11 @@ export class TransactionRouter {
         } else if (error instanceof InternalException) {
             console.error(`An exception occurred. Message: ${error.message}`)
             status = httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR
-            errorMessage = internalServerErrorMsg
+            errorMessage = INTERNAL_SERVER_ERROR_MSG
         } else {
             console.error(`An uncaught exception occurred. Message: ${error}`)
             status = httpConstants.HTTP_STATUS_INTERNAL_SERVER_ERROR
-            errorMessage = internalServerErrorMsg
+            errorMessage = INTERNAL_SERVER_ERROR_MSG
         }
         response.status(status)
         response.json(new ErrorResult(endpoint, status, errorMessage))
