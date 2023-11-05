@@ -24,12 +24,12 @@ export class DatabaseService {
             })
             const resRow = res.rows[0]
             if (resRow) {
-                return Promise.resolve(resRow.amount)
+                return Promise.resolve(parseFloat(resRow.amount))
             } else {
                 return Promise.reject(new AccountMissingException(`Account ${accountId} not found`))
             }
         } catch (e) {
-            console.error(`A database exception occurred: ${e}`)
+            console.error('A database exception occurred:', e)
             return Promise.reject(new InternalException(String(e)))
         } finally {
             client?.release()
@@ -47,14 +47,14 @@ export class DatabaseService {
             return Promise.resolve(
                 res.rows.map((row) => {
                     if (row.type === 'DEPOSIT') {
-                        return new DepositTransaction(Number(row.serial_number), Number(row.amount), row.timestamp)
+                        return new DepositTransaction(parseInt(row.serial_number), parseFloat(row.amount), row.timestamp)
                     } else {
-                        return new WithdrawTransaction(Number(row.serial_number), Number(row.amount), row.timestamp)
+                        return new WithdrawTransaction(parseInt(row.serial_number), parseFloat(row.amount), row.timestamp)
                     }
                 })
             );
         } catch (e) {
-            console.error(`A database exception occurred: ${e}`)
+            console.error('A database exception occurred:', e)
             return Promise.reject(new InternalException(String(e)))
         } finally {
             client?.release()

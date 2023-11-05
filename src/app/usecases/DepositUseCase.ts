@@ -21,7 +21,6 @@ export class DepositUseCase {
 
         try {
             const account = await this.accountService.getAccount(accountId)
-            console.log(account)
             return Promise.resolve()
         } catch (e) {
             return Promise.reject(e)

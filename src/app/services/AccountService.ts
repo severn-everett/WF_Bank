@@ -14,6 +14,7 @@ export class AccountService {
             const account = new Account(baseAmt)
             const transactions = await this.dbService.getTransactions(accountId)
             transactions.forEach((transaction) => account.addTransaction(transaction))
+            console.debug('Created account:', account)
             return Promise.resolve(account)
         } catch (e) {
             console.error(e)
