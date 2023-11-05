@@ -14,7 +14,7 @@ export class AccountService {
         this.dbService = dbService;
     }
 
-    async deposit(accountId: string, amount: number): Promise<void> {
+    async deposit(accountId: string, amount: number) {
         let depositSuccessful = false
         while (!depositSuccessful) {
             try {
@@ -37,7 +37,7 @@ export class AccountService {
         return Promise.resolve()
     }
 
-    async withdraw(accountId: string, amount: number): Promise<void> {
+    async withdraw(accountId: string, amount: number) {
         let withdrawSuccessful = false
         while (!withdrawSuccessful) {
             try {
@@ -51,6 +51,35 @@ export class AccountService {
                     return Promise.reject(
                         new TransactionDisallowedException(`Transaction would exceed overdraft limit of ${OVERDRAFT_LIMIT}`)
                     )
+                }
+            } catch (e) {
+                // Only abort if a transaction collision hasn't occurred
+                if (!(e instanceof TransactionCollisionException)) return Promise.reject(e)
+            }
+        }
+        return Promise.resolve()
+    }
+
+    async transfer(fromAccountId: string, toAccountId: string, amount: number) {
+        let transferSuccessful = false
+        while (!transferSuccessful) {
+            try {
+                const fromAccount = await this.getAccount(fromAccountId)
+                const toAccount = await this.getAccount(toAccountId)
+                if (!this.canTransfer(fromAccount, amount)) {
+                    return Promise.reject(
+                        new TransactionDisallowedException('Unable to overdraft on transfer')
+                    )
+                } else if (!this.canDeposit(toAccount, amount)) {
+                    return Promise.reject(
+                        new TransactionDisallowedException(`Transaction would exceed daily deposit limit of ${DAILY_DEPOSIT_LIMIT}`)
+                    )
+                } else {
+                    await this.dbService.saveTransaction(
+                        new WithdrawTransaction(fromAccountId, fromAccount.serialNumber + 1, amount, new Date()),
+                        new DepositTransaction(toAccountId, toAccount.serialNumber + 1, amount, new Date())
+                    )
+                    transferSuccessful = true
                 }
             } catch (e) {
                 // Only abort if a transaction collision hasn't occurred
@@ -82,5 +111,9 @@ export class AccountService {
 
     private canWithdraw(account: Account, amount: number): boolean {
         return (account.amount - amount) >= OVERDRAFT_LIMIT
+    }
+
+    private canTransfer(account: Account, amount: number): boolean {
+        return (account.amount - amount) >= 0
     }
 }

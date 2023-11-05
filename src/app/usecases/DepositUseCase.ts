@@ -8,7 +8,7 @@ export class DepositUseCase {
         this.accountService = accountService;
     }
 
-    async handle(accountId: string, rawAmount: any): Promise<void> {
+    async handle(accountId: string, rawAmount: any) {
         const amount = Number(rawAmount)
         if (Number.isNaN(amount) || amount <= 0) {
             return Promise.reject(

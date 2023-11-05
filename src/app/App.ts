@@ -5,6 +5,7 @@ import {DepositUseCase} from "./usecases/DepositUseCase"
 import {DatabaseService} from "./services/DatabaseService";
 import {AccountService} from "./services/AccountService";
 import {WithdrawUseCase} from "./usecases/WithdrawUseCase";
+import {TransferUseCase} from "./usecases/TransferUseCase";
 
 export class App {
     public readonly express: Express = express()
@@ -19,7 +20,8 @@ export class App {
         const accountService = new AccountService(this.db)
         const depositUseCase = new DepositUseCase(accountService)
         const withdrawUseCase = new WithdrawUseCase(accountService)
-        this.transactionRouter = new TransactionRouter(depositUseCase, withdrawUseCase)
+        const transferUseCase = new TransferUseCase(accountService)
+        this.transactionRouter = new TransactionRouter(depositUseCase, withdrawUseCase, transferUseCase)
     }
 
     start(): void {

@@ -47,7 +47,7 @@ describe('Deposit Test', () => {
     })
 
     it.each`
-    accountId | amount
+    accountId        | amount
     ${VALID_ACCOUNT} | ${NEGATIVE_AMOUNT}
     ${VALID_ACCOUNT} | ${INVALID_AMOUNT}
     ${VALID_ACCOUNT} | ${null}

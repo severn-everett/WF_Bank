@@ -8,6 +8,7 @@ import {InvalidParameterException} from "../model/InvalidParameterException";
 import {AccountMissingException} from "../model/AccountMissingException";
 import {TransactionDisallowedException} from "../model/TransactionDisallowedException";
 import {WithdrawUseCase} from "../usecases/WithdrawUseCase";
+import {TransferUseCase} from "../usecases/TransferUseCase";
 
 type DepositRequest = Request<never, never, never, { accountId: string, amount: any }>
 type WithdrawRequest = Request<never, never, never, { accountId: string, amount: any }>
@@ -22,39 +23,46 @@ const TRANSFER_ENDPOINT = "/transfer"
 export class TransactionRouter {
     public readonly router: Router = express.Router()
 
-    constructor(depositUseCase: DepositUseCase, withdrawUseCase: WithdrawUseCase) {
+    constructor(
+        depositUseCase: DepositUseCase,
+        withdrawUseCase: WithdrawUseCase,
+        transferUseCase: TransferUseCase
+    ) {
         this.router.post(
             DEPOSIT_ENDPOINT,
             async (request: DepositRequest, response: Response) => {
-                return depositUseCase.handle(
-                    request.query.accountId,
-                    request.query.amount
-                ).then(() => {
-                    response.status(httpConstants.HTTP_STATUS_OK)
-                    response.send()
-                }).catch((error) => {
-                    this.handleError(DEPOSIT_ENDPOINT, error, response)
-                })
+                return depositUseCase.handle(request.query.accountId, request.query.amount)
+                    .then(() => {
+                        response.status(httpConstants.HTTP_STATUS_OK)
+                        response.send()
+                    }).catch((error) => {
+                        this.handleError(DEPOSIT_ENDPOINT, error, response)
+                    })
             }
         ).post(
             WITHDRAW_ENDPOINT,
             async (request: WithdrawRequest, response: Response) => {
-                return withdrawUseCase.handle(
-                    request.query.accountId,
+                return withdrawUseCase.handle(request.query.accountId, request.query.amount)
+                    .then(() => {
+                        response.status(httpConstants.HTTP_STATUS_OK)
+                        response.send()
+                    }).catch((error) => {
+                        this.handleError(WITHDRAW_ENDPOINT, error, response)
+                    })
+            }
+        ).post(
+            TRANSFER_ENDPOINT,
+            async (request: TransferRequest, response: Response) => {
+                return transferUseCase.handle(
+                    request.query.fromAccountId,
+                    request.query.toAccountId,
                     request.query.amount
                 ).then(() => {
                     response.status(httpConstants.HTTP_STATUS_OK)
                     response.send()
                 }).catch((error) => {
-                    this.handleError(WITHDRAW_ENDPOINT, error, response)
+                    this.handleError(TRANSFER_ENDPOINT, error, response)
                 })
-            }
-        ).post(
-            "/transfer",
-            async (request: Request, response: Response) => {
-                response.send(
-                    `Transfer ${request.query.amount} from account ${request.query.fromAccountId} to account ${request.query.toAccountId}`
-                )
             }
         )
     }
