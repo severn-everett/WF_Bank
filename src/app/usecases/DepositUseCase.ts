@@ -8,10 +8,11 @@ export class DepositUseCase {
         this.accountService = accountService;
     }
 
-    async handle(accountId: string, amount: number): Promise<void> {
-        if (amount === undefined || amount <= 0) {
+    async handle(accountId: string, rawAmount: any): Promise<void> {
+        const amount = Number(rawAmount)
+        if (Number.isNaN(amount) || amount <= 0) {
             return Promise.reject(
-                new InvalidParameterException("amount", "Amount must be greater than zero")
+                new InvalidParameterException("amount", "Amount must be a number greater than zero")
             )
         } else if (accountId === undefined) {
             return Promise.reject(

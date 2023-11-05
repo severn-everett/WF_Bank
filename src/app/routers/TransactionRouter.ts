@@ -1,6 +1,5 @@
 import 'express-async-errors'
 import express, {Request, Response, Router} from "express"
-import {query, validationResult} from "express-validator"
 import {DepositUseCase} from "../usecases/DepositUseCase"
 import {constants as httpConstants} from "http2"
 import {ErrorResult} from "../model/ErrorResult";
@@ -9,10 +8,9 @@ import {InvalidParameterException} from "../model/InvalidParameterException";
 import {AccountMissingException} from "../model/AccountMissingException";
 import {TransactionDisallowedException} from "../model/TransactionDisallowedException";
 
-type DepositRequest = Request<never, never, never, { accountId: string, amount: number }>
-type WithdrawRequest = Request<never, never, never, { accountId: string, amount: number }>
-type TransferRequest = Request<never, never, never, { fromAccountId: string, toAccountId: string, amount: number }>
-const amountValidator = query('amount').isNumeric()
+type DepositRequest = Request<never, never, never, { accountId: string, amount: any }>
+type WithdrawRequest = Request<never, never, never, { accountId: string, amount: any }>
+type TransferRequest = Request<never, never, never, { fromAccountId: string, toAccountId: string, amount: any }>
 const internalServerErrorMsg = "An unexpected internal error occurred"
 
 export class TransactionRouter {
@@ -21,16 +19,7 @@ export class TransactionRouter {
     constructor(depositUseCase: DepositUseCase) {
         this.router.post(
             "/deposit",
-            amountValidator,
             async (request: DepositRequest, response: Response) => {
-                const vr = validationResult(request)
-                if (!vr.isEmpty()) {
-                    return this.handleError(
-                        "/deposit",
-                        new InvalidParameterException("amount", "Must be numeric"),
-                        response
-                    )
-                }
                 return depositUseCase.handle(
                     request.query.accountId,
                     request.query.amount
