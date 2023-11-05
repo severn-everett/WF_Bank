@@ -7,6 +7,7 @@ import {ErrorResult} from "../model/ErrorResult";
 import {InternalException} from "../model/InternalException";
 import {InvalidParameterException} from "../model/InvalidParameterException";
 import {AccountMissingException} from "../model/AccountMissingException";
+import {TransactionDisallowedException} from "../model/TransactionDisallowedException";
 
 type DepositRequest = Request<never, never, never, { accountId: string, amount: number }>
 type WithdrawRequest = Request<never, never, never, { accountId: string, amount: number }>
@@ -61,6 +62,9 @@ export class TransactionRouter {
         if (error instanceof InvalidParameterException) {
             status = httpConstants.HTTP_STATUS_BAD_REQUEST
             errorMessage = `An invalid parameter was passed. Parameter: ${error.parameter} | Message: ${error.message}`
+        } else if (error instanceof TransactionDisallowedException) {
+            status = httpConstants.HTTP_STATUS_FORBIDDEN
+            errorMessage = error.message
         } else if (error instanceof AccountMissingException) {
             status = httpConstants.HTTP_STATUS_NOT_FOUND
             errorMessage = error.message

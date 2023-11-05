@@ -1,5 +1,7 @@
 import {InvalidParameterException} from "../model/InvalidParameterException";
 import {AccountService} from "../services/AccountService";
+import {TransactionDisallowedException} from "../model/TransactionDisallowedException";
+import {DAILY_DEPOSIT_LIMIT} from "../util/Constants";
 
 export class DepositUseCase {
     private readonly accountService: AccountService
@@ -21,7 +23,13 @@ export class DepositUseCase {
 
         try {
             const account = await this.accountService.getAccount(accountId)
-            return Promise.resolve()
+            if (this.accountService.canDeposit(account, amount)) {
+                return Promise.resolve()
+            } else {
+                return Promise.reject(
+                    new TransactionDisallowedException(`Transaction would exceed limit of ${DAILY_DEPOSIT_LIMIT}`)
+                )
+            }
         } catch (e) {
             return Promise.reject(e)
         }

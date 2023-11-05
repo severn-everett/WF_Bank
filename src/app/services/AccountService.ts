@@ -1,5 +1,7 @@
 import {DatabaseService} from "./DatabaseService";
 import {Account} from "../model/Account";
+import {createDateStr} from "../util/DateUtil";
+import {DAILY_DEPOSIT_LIMIT} from "../util/Constants";
 
 export class AccountService {
     private readonly dbService: DatabaseService
@@ -20,5 +22,11 @@ export class AccountService {
             console.error(e)
             return Promise.reject(e)
         }
+    }
+
+    canDeposit(account: Account, amount: number): boolean {
+        const todayDateStr = createDateStr(new Date())
+        const todayDepositAmt = account.depositCount.get(todayDateStr) ?? 0.0
+        return (todayDepositAmt + amount) <= DAILY_DEPOSIT_LIMIT
     }
 }
