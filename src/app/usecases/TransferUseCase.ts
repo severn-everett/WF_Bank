@@ -22,6 +22,10 @@ export class TransferUseCase {
             return Promise.reject(
                 new InvalidParameterException("toAccountId", "Must provide an account id")
             )
+        } else if (fromAccountId === toAccountId) {
+            return Promise.reject(
+                new InvalidParameterException("toAccountId", "Recipient must be a different account")
+            )
         }
 
         return this.accountService.transfer(fromAccountId, toAccountId, rawAmount)

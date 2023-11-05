@@ -68,12 +68,13 @@ describe('Transfer Test', () => {
     })
 
     it.each`
-    fromAccountId         | toAccountId         | amount
-    ${VALID_FROM_ACCOUNT} | ${VALID_TO_ACCOUNT} | ${NEGATIVE_AMOUNT}
-    ${VALID_FROM_ACCOUNT} | ${VALID_TO_ACCOUNT} | ${INVALID_AMOUNT}
-    ${VALID_FROM_ACCOUNT} | ${VALID_TO_ACCOUNT} | ${null}
-    ${null}               | ${VALID_TO_ACCOUNT} | ${VALID_AMOUNT}
-    ${VALID_FROM_ACCOUNT} | ${null}             | ${VALID_AMOUNT}
+    fromAccountId         | toAccountId           | amount
+    ${VALID_FROM_ACCOUNT} | ${VALID_TO_ACCOUNT}   | ${NEGATIVE_AMOUNT}
+    ${VALID_FROM_ACCOUNT} | ${VALID_FROM_ACCOUNT} | ${VALID_AMOUNT}
+    ${VALID_FROM_ACCOUNT} | ${VALID_TO_ACCOUNT}   | ${INVALID_AMOUNT}
+    ${VALID_FROM_ACCOUNT} | ${VALID_TO_ACCOUNT}   | ${null}
+    ${null}               | ${VALID_TO_ACCOUNT}   | ${VALID_AMOUNT}
+    ${VALID_FROM_ACCOUNT} | ${null}               | ${VALID_AMOUNT}
     `(
         "should reject a transfer from account '$fromAccountId' to '$toAccountId' for amount '$amount'",
         async ({fromAccountId, toAccountId, amount}) => {
