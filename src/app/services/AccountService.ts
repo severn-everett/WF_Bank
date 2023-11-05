@@ -2,6 +2,9 @@ import {DatabaseService} from "./DatabaseService";
 import {Account} from "../model/Account";
 import {createDateStr} from "../util/DateUtil";
 import {DAILY_DEPOSIT_LIMIT} from "../util/Constants";
+import {TransactionDisallowedException} from "../model/TransactionDisallowedException";
+import {DepositTransaction} from "../model/DepositTransaction";
+import {TransactionCollisionException} from "../model/TransactionCollisionException";
 
 export class AccountService {
     private readonly dbService: DatabaseService
@@ -10,7 +13,30 @@ export class AccountService {
         this.dbService = dbService;
     }
 
-    async getAccount(accountId: string): Promise<Account> {
+    async deposit(accountId: string, amount: number): Promise<void> {
+        let depositSuccessful = false
+        while (!depositSuccessful) {
+            try {
+                const account = await this.getAccount(accountId)
+                if (this.canDeposit(account, amount)) {
+                    await this.dbService.saveTransaction(
+                        new DepositTransaction(accountId, account.serialNumber + 1, amount, new Date())
+                    )
+                    depositSuccessful = true
+                } else {
+                    return Promise.reject(
+                        new TransactionDisallowedException(`Transaction would exceed limit of ${DAILY_DEPOSIT_LIMIT}`)
+                    )
+                }
+            } catch (e) {
+                // Only abort if a transaction collision hasn't occurred
+                if (!(e instanceof TransactionCollisionException)) return Promise.reject(e)
+            }
+        }
+        return Promise.resolve()
+    }
+
+    private async getAccount(accountId: string): Promise<Account> {
         try {
             const baseAmt = await this.dbService.getAmount(accountId)
             const account = new Account(baseAmt)
@@ -24,7 +50,7 @@ export class AccountService {
         }
     }
 
-    canDeposit(account: Account, amount: number): boolean {
+    private canDeposit(account: Account, amount: number): boolean {
         const todayDateStr = createDateStr(new Date())
         const todayDepositAmt = account.depositCount.get(todayDateStr) ?? 0.0
         return (todayDepositAmt + amount) <= DAILY_DEPOSIT_LIMIT
