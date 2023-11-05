@@ -1,2 +1,2 @@
 export const
-    DAILY_DEPOSIT_LIMIT = 2000
+    DAILY_DEPOSIT_LIMIT = 5000

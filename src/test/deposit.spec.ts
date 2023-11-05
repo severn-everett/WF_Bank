@@ -2,12 +2,23 @@ import request from "supertest"
 import {constants as httpConstants} from "http2"
 import app from "../app/main"
 import {ACCOUNT_ID, AMOUNT} from "./testCommon"
+import {Client} from "pg";
 
 const ENDPOINT = "/deposit"
-const VALID_ACCOUNT = "depositAccount"
-const VALID_AMOUNT = 2000
+const VALID_ACCOUNT = "testDepositAccount"
+const INVALID_ACCOUNT = "nonExistentTestDepositAccount"
+const VALID_AMOUNT = 500
+const EXCESSIVE_AMOUNT = 5001
 const NEGATIVE_AMOUNT = -2000
 const INVALID_AMOUNT = "InvalidAmount"
+
+const client = new Client({
+    host: 'localhost',
+    port: 5432,
+    database: 'wfdb',
+    user: 'postgres',
+    password: 'postgres',
+})
 
 function buildUrl(accountId?: string, amount?: any): string {
     let args = []
@@ -21,7 +32,35 @@ function buildUrl(accountId?: string, amount?: any): string {
     }
 }
 
+beforeAll(async () => {
+    await client.connect()
+})
+
+beforeEach(async () => {
+    await client.query({
+        text: 'INSERT INTO account (id, amount) VALUES ($1, 500)',
+        values: [VALID_ACCOUNT]
+    })
+})
+
+afterEach(async () => {
+    await client.query({
+        text: 'DELETE FROM account WHERE id = $1',
+        values: [VALID_ACCOUNT]
+    })
+})
+
+afterAll(async () => {
+    await app.stop()
+    await client.end()
+})
+
 describe('Deposit Test', () => {
+    it('should accept a deposit for a valid account and amount', async () => {
+        const response = await request(app.express).post(buildUrl(VALID_ACCOUNT, VALID_AMOUNT))
+        expect(response.status).toBe(httpConstants.HTTP_STATUS_OK)
+    })
+
     it.each`
     accountId | amount
     ${VALID_ACCOUNT} | ${NEGATIVE_AMOUNT}
@@ -32,8 +71,14 @@ describe('Deposit Test', () => {
         const response = await request(app.express).post(buildUrl(accountId, amount))
         expect(response.status).toBe(httpConstants.HTTP_STATUS_BAD_REQUEST)
     })
-})
 
-afterAll(async () => {
-    await app.stop()
+    it('should reject a deposit for a non-existent account', async () => {
+        const response = await request(app.express).post(buildUrl(INVALID_ACCOUNT, VALID_AMOUNT))
+        expect(response.status).toBe(httpConstants.HTTP_STATUS_NOT_FOUND)
+    })
+
+    it('should reject a deposit that exceeds the daily deposit limit', async () => {
+        const response = await request(app.express).post(buildUrl(VALID_ACCOUNT, EXCESSIVE_AMOUNT))
+        expect(response.status).toBe(httpConstants.HTTP_STATUS_FORBIDDEN)
+    })
 })
